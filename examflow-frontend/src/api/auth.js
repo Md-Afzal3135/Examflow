@@ -1,8 +1,13 @@
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "https://examflow-h6hv.onrender.com/api";
+const RENDER_URL = "https://examflow-h6hv.onrender.com/api";
+
+// Strip trailing slash, then ensure /api suffix is present
+const rawUrl = (import.meta.env.VITE_API_URL || RENDER_URL).replace(/\/$/, "");
+const BASE_URL = rawUrl.endsWith("/api") ? rawUrl : `${rawUrl}/api`;
 
 const api = axios.create({ baseURL: BASE_URL });
+
 
 // Attach token to every request
 api.interceptors.request.use((config) => {
