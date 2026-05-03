@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { loginUser } from "../api/auth";
+import { sendPasswordResetEmail } from "../api/emailService";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -10,6 +11,12 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // ── Forgot-password modal state ──────────────────────────
+  const [showForgot, setShowForgot] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetStatus, setResetStatus] = useState("idle"); // idle | sending | sent | error
+  const [resetError, setResetError] = useState("");
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -33,6 +40,39 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ── Password-reset handler ───────────────────────────────
+  const handlePasswordReset = async (e) => {
+    e.preventDefault();
+    if (!resetEmail.trim()) return;
+
+    setResetStatus("sending");
+    setResetError("");
+
+    try {
+      // Build a token-style reset link; real token verification happens on your backend
+      const token = btoa(`${resetEmail}:${Date.now()}`);
+      const resetLink = `${window.location.origin}/reset-password?token=${token}&email=${encodeURIComponent(resetEmail)}`;
+
+      await sendPasswordResetEmail({
+        name:      resetEmail.split("@")[0],  // best-effort name from email prefix
+        email:     resetEmail,
+        resetLink,
+      });
+
+      setResetStatus("sent");
+    } catch {
+      setResetStatus("error");
+      setResetError("Failed to send reset email. Please try again later.");
+    }
+  };
+
+  const closeForgot = () => {
+    setShowForgot(false);
+    setResetEmail("");
+    setResetStatus("idle");
+    setResetError("");
   };
 
   return (
@@ -108,7 +148,14 @@ export default function LoginPage() {
                 placeholder="••••••••"
               />
               <div className="text-right mt-1.5">
-                <a href="#" className="text-xs text-primary hover:underline font-medium">Forgot password?</a>
+                <button
+                  id="forgot-password-btn"
+                  type="button"
+                  onClick={() => setShowForgot(true)}
+                  className="text-xs text-primary hover:underline font-medium bg-transparent border-none cursor-pointer p-0"
+                >
+                  Forgot password?
+                </button>
               </div>
             </div>
 
@@ -149,6 +196,88 @@ export default function LoginPage() {
           CountryEdu Private Limited · ExamFlow © 2026
         </p>
       </div>
+
+      {/* ── Forgot-password modal ──────────────────────────── */}
+      {showForgot && (
+        <div
+          id="forgot-password-modal"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"
+          onClick={(e) => e.target === e.currentTarget && closeForgot()}
+        >
+          <div className="card w-full max-w-sm shadow-2xl border-0 animate-slide-up">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-slate-800">Reset Password</h3>
+              <button
+                id="close-forgot-modal-btn"
+                type="button"
+                onClick={closeForgot}
+                className="text-slate-400 hover:text-slate-600 transition-colors text-xl leading-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            {resetStatus === "sent" ? (
+              <div className="text-center py-4">
+                <div className="text-4xl mb-3">📬</div>
+                <p className="font-semibold text-slate-800">Check your inbox!</p>
+                <p className="text-sm text-slate-500 mt-1">
+                  A password-reset link has been sent to <span className="font-medium">{resetEmail}</span>.
+                </p>
+                <button
+                  type="button"
+                  onClick={closeForgot}
+                  className="btn-primary w-full mt-6"
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handlePasswordReset} className="space-y-4">
+                <p className="text-sm text-slate-500">
+                  Enter your registered email and we&apos;ll send you a reset link.
+                </p>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="reset-email">
+                    Email address
+                  </label>
+                  <input
+                    id="reset-email"
+                    type="email"
+                    required
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    className="input-field"
+                    placeholder="you@example.com"
+                  />
+                </div>
+
+                {resetStatus === "error" && (
+                  <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-danger">
+                    ⚠️ {resetError}
+                  </div>
+                )}
+
+                <button
+                  id="send-reset-email-btn"
+                  type="submit"
+                  disabled={resetStatus === "sending"}
+                  className="btn-primary w-full"
+                >
+                  {resetStatus === "sending" ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                      Sending…
+                    </span>
+                  ) : (
+                    "Send Reset Link"
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

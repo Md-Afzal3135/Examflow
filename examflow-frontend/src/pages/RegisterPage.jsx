@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../api/auth";
+import { sendWelcomeEmail } from "../api/emailService";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -22,6 +23,8 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await registerUser({ name: form.name, email: form.email, password: form.password, role: "student" });
+      // Send welcome email — fire-and-forget (don't block navigation on email failure)
+      sendWelcomeEmail({ name: form.name, email: form.email }).catch(() => {});
       navigate("/login");
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed. Please try again.");
