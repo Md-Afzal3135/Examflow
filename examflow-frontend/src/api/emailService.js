@@ -2,49 +2,71 @@
  * emailService.js
  * ---------------
  * Thin wrapper around @emailjs/browser.
- * Both "welcome" and "password reset" emails use the same EmailJS
- * template (template_d1s8qbu).
  *
- * Template variables sent (match your EmailJS template exactly):
- *   to_name  – recipient's display name          → {{to_name}}
- *   to_email – used by EmailJS as recipient addr  → routing only
- *   email    – shown in the email footer          → {{email}}
- *   link     – password-reset URL                → {{link}}
+ * A SINGLE EmailJS template (template_d1s8qbu) handles both email types.
+ * The layout is fixed; only these content variables change per call:
+ *
+ *   to_name       – recipient's display name
+ *   to_email      – EmailJS routing (recipient address)
+ *   email         – {{email}}  shown in footer
+ *   link          – {{link}}   CTA href + fallback URL
+ *   email_title   – {{email_title}}   main heading
+ *   email_subtitle– {{email_subtitle}} sub-heading
+ *   icon          – {{icon}}   emoji in the circular badge
+ *   body_text     – {{body_text}} paragraph body copy
+ *   cta_label     – {{cta_label}} button text
+ *   extra_info    – {{extra_info}} yellow info box content
+ *   sign_off      – {{sign_off}} closing line
  */
 
 import emailjs from "@emailjs/browser";
 
-const SERVICE_ID  = "default_service";           // EmailJS → Email Services → Service ID
+const SERVICE_ID  = "default_service";          // EmailJS → Email Services → Service ID
 const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
 const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
-// Initialise once so we don't need to pass the key on every send call
 emailjs.init(PUBLIC_KEY);
 
-/**
- * Send a welcome / account-created email.
- * @param {{ name: string, email: string }} user
- * @returns {Promise}
- */
+// ── Welcome email ─────────────────────────────────────────────
 export async function sendWelcomeEmail({ name, email }) {
   return emailjs.send(SERVICE_ID, TEMPLATE_ID, {
-    to_name:  name,
-    to_email: email,   // EmailJS uses this to address the email
-    email:    email,   // {{email}} shown in template footer
-    link:     "",      // not used for welcome emails
+    to_name:        name,
+    to_email:       email,
+    email,
+    link:           "https://examflow.vercel.app/login",
+    email_title:    "Welcome to ExamFlow! 🎉",
+    email_subtitle: "Your student account is ready",
+    icon:           "🎓",
+    body_text:
+      "We're excited to have you on board! Your ExamFlow account has been created " +
+      "successfully. You can now log in and start exploring available exams, track " +
+      "your scores, and monitor your progress.",
+    cta_label:  "Go to Dashboard →",
+    extra_info:
+      "💡 Tip: Browse the exam list on your dashboard and attempt any active exam. " +
+      "Your results will be available immediately after submission.",
+    sign_off: "Happy learning,",
   });
 }
 
-/**
- * Send a password-reset email with a one-time link.
- * @param {{ name: string, email: string, resetLink: string }} params
- * @returns {Promise}
- */
+// ── Password-reset email ──────────────────────────────────────
 export async function sendPasswordResetEmail({ name, email, resetLink }) {
   return emailjs.send(SERVICE_ID, TEMPLATE_ID, {
-    to_name:  name,
-    to_email: email,      // EmailJS uses this to address the email
-    email:    email,      // {{email}} shown in template footer
-    link:     resetLink,  // {{link}} used as the clickable reset URL
+    to_name:        name,
+    to_email:       email,
+    email,
+    link:           resetLink,
+    email_title:    "Password Reset Request",
+    email_subtitle: "We received a request to reset your password",
+    icon:           "🔐",
+    body_text:
+      "Someone requested a password reset for your ExamFlow account. " +
+      "Click the button below to choose a new password. " +
+      "This link is valid for 1 hour.",
+    cta_label:  "Reset My Password",
+    extra_info:
+      "⚠️ Didn't request this? If you didn't ask for a password reset, you can " +
+      "safely ignore this email. Your account remains secure.",
+    sign_off: "Best regards,",
   });
 }
