@@ -21,7 +21,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-change-in-prod')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+
+# Add Render hostname if running in production
+RENDER_HOSTNAME = os.getenv('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_HOSTNAME)
+
 
 # Application definition
 
