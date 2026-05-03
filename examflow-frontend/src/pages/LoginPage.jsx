@@ -62,9 +62,11 @@ export default function LoginPage() {
       });
 
       setResetStatus("sent");
-    } catch {
+    } catch (err) {
+      console.error("[EmailJS] sendPasswordResetEmail error:", err);
+      const detail = err?.text || err?.message || JSON.stringify(err);
       setResetStatus("error");
-      setResetError("Failed to send reset email. Please try again later.");
+      setResetError(`Failed to send reset email: ${detail}`);
     }
   };
 

@@ -21,11 +21,20 @@
 
 import emailjs from "@emailjs/browser";
 
-const SERVICE_ID  = "default_service";          // EmailJS → Email Services → Service ID
-const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID;   // e.g. service_xxxxxxx
+const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;  // e.g. template_xxxxxxx
+const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;   // Public Key from EmailJS
 
-emailjs.init(PUBLIC_KEY);
+// Validate env vars at startup so missing keys are obvious in the console
+if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY) {
+  console.error(
+    "[EmailJS] Missing env vars:",
+    { SERVICE_ID: !!SERVICE_ID, TEMPLATE_ID: !!TEMPLATE_ID, PUBLIC_KEY: !!PUBLIC_KEY },
+    "\nCheck your .env file for VITE_EMAILJS_SERVICE_ID, VITE_EMAILJS_TEMPLATE_ID, VITE_EMAILJS_PUBLIC_KEY"
+  );
+}
+
+emailjs.init({ publicKey: PUBLIC_KEY });
 
 // ── Welcome email ─────────────────────────────────────────────
 export async function sendWelcomeEmail({ name, email }) {
