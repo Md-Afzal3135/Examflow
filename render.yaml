@@ -9,8 +9,8 @@ services:
       - key: DEBUG
         value: "False"
       - key: SECRET_KEY
-        generateValue: true
+        value: "django-insecure-examflow-local-dev-key-2026"
       - key: DATABASE_URL
-        fromDatabase:
-          name: examflow-db
-          property: connectionString
+        value: "postgresql://postgres:EEmSUabQjsQKHiFKPiDSLZeQYdVADoSf@switchyard.proxy.rlwy.net:52124/railway"
+      - key: RENDER_EXTERNAL_HOSTNAME
+        value: "examflow-h6hv.onrender.com"
