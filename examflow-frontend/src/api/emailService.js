@@ -3,14 +3,13 @@
  * ---------------
  * Thin wrapper around @emailjs/browser.
  * Both "welcome" and "password reset" emails use the same EmailJS
- * template (template_d1s8qbu). The template variable `email_type`
- * lets the template render the appropriate subject / body copy.
+ * template (template_d1s8qbu).
  *
- * Template variables expected by template_d1s8qbu:
- *   to_name     – recipient's display name
- *   to_email    – recipient's email address
- *   email_type  – "welcome" | "password_reset"
- *   reset_link  – one-time reset URL  (only used when email_type === "password_reset")
+ * Template variables sent (match your EmailJS template exactly):
+ *   to_name  – recipient's display name          → {{to_name}}
+ *   to_email – used by EmailJS as recipient addr  → routing only
+ *   email    – shown in the email footer          → {{email}}
+ *   link     – password-reset URL                → {{link}}
  */
 
 import emailjs from "@emailjs/browser";
@@ -29,10 +28,10 @@ emailjs.init(PUBLIC_KEY);
  */
 export async function sendWelcomeEmail({ name, email }) {
   return emailjs.send(SERVICE_ID, TEMPLATE_ID, {
-    to_name:    name,
-    to_email:   email,
-    email_type: "welcome",
-    reset_link: "",           // not used for welcome emails
+    to_name:  name,
+    to_email: email,   // EmailJS uses this to address the email
+    email:    email,   // {{email}} shown in template footer
+    link:     "",      // not used for welcome emails
   });
 }
 
@@ -43,9 +42,9 @@ export async function sendWelcomeEmail({ name, email }) {
  */
 export async function sendPasswordResetEmail({ name, email, resetLink }) {
   return emailjs.send(SERVICE_ID, TEMPLATE_ID, {
-    to_name:    name,
-    to_email:   email,
-    email_type: "password_reset",
-    reset_link: resetLink,
+    to_name:  name,
+    to_email: email,      // EmailJS uses this to address the email
+    email:    email,      // {{email}} shown in template footer
+    link:     resetLink,  // {{link}} used as the clickable reset URL
   });
 }
