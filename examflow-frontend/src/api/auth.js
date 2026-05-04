@@ -27,7 +27,7 @@ export const requestPasswordReset = (email) => api.post("/auth/request-password-
 export const confirmPasswordReset = (token, password) => api.post("/auth/reset-password", { token, password });
 
 // Email Verification
-export const sendVerification = () => api.post("/auth/send-verification");
+export const sendVerification = (email) => api.post("/auth/send-verification", { email });
 export const verifyEmail = (token) => api.post("/auth/verify-email", { token });
 
 // Exams

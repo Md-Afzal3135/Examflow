@@ -22,34 +22,27 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
-      const regRes = await registerUser({ name: form.name, email: form.email, password: form.password, role: "student" });
-      const token = localStorage.getItem("token") || regRes?.data?.token;
+      // 1. Register the account
+      await registerUser({ name: form.name, email: form.email, password: form.password, role: "student" });
 
-      // Send welcome + verification emails (fire-and-forget)
-      sendWelcomeEmail({ name: form.name, email: form.email }).catch(() => {});
+      // 2. Get a backend-signed verification token (no JWT required — email passed in body)
+      const vRes = await sendVerification(form.email);
+      const { token: vToken, name: vName, email: vEmail } = vRes.data;
+      const verifyLink = `${window.location.origin}/verify-email?token=${encodeURIComponent(vToken)}`;
 
-      // Get a signed verification token from backend and send verification email
-      if (token) {
-        // Temporarily store token to authenticate the send-verification call
-        const origToken = localStorage.getItem("token");
-        localStorage.setItem("token", token);
-        sendVerification()
-          .then((vRes) => {
-            const { token: vToken, name, email } = vRes.data;
-            const verifyLink = `${window.location.origin}/verify-email?token=${encodeURIComponent(vToken)}`;
-            sendVerificationEmail({ name, email, verifyLink }).catch(() => {});
-          })
-          .catch(() => {})
-          .finally(() => {
-            // Restore original token (user not logged in yet)
-            if (origToken) localStorage.setItem("token", origToken);
-            else localStorage.removeItem("token");
-          });
-      }
+      // 3. Send welcome + verification emails IN PARALLEL — fire-and-forget
+      Promise.all([
+        sendWelcomeEmail({ name: form.name, email: form.email }),
+        sendVerificationEmail({ name: vName || form.name, email: vEmail || form.email, verifyLink }),
+      ]).catch(() => {});
 
       navigate("/login");
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
+      setError(
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Registration failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }

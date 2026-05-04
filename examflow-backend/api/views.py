@@ -347,16 +347,30 @@ class ResetPasswordConfirmView(views.APIView):
 class SendVerificationView(views.APIView):
     """
     POST /api/auth/send-verification
-    Authenticated — generates and returns a signed verification token (24h).
-    The frontend embeds the token in a link and sends the email via EmailJS.
+    Body: { email }  — AllowAny so it works right after registration (no JWT yet).
+    Generates and returns a signed verification token (24h expiry).
+    Frontend embeds the token in a link and sends the email via EmailJS.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
-        if request.user.email_verified:
+        email = request.data.get('email', '').strip().lower()
+
+        # If authenticated, fall back to the logged-in user's email
+        if not email and hasattr(request, 'user') and request.user.is_authenticated:
+            email = request.user.email
+
+        if not email:
+            return Response({"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response({"error": "No account found with that email."}, status=status.HTTP_404_NOT_FOUND)
+
+        if user.email_verified:
             return Response({"message": "Email is already verified."})
 
-        token = dumps(request.user.email, salt='examflow-email-verify')
+        token = dumps(email, salt='examflow-email-verify')
         return Response({
             "message": "Verification token generated.",
             "token": token,
