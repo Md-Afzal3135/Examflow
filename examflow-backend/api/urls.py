@@ -6,7 +6,8 @@ from .views import (
     ExamListCreateView, ExamDetailView, ExamSubmitView,
     QuestionListCreateView, QuestionDetailView,
     MyResultsView, ResultDetailView,
-    AdminStudentsView, AdminStatsView, AdminToggleExamView
+    AdminStudentsView, AdminStatsView, AdminToggleExamView,
+    AdminStudentDetailView, AdminStudentDeleteView
 )
 
 urlpatterns = [
@@ -40,6 +41,8 @@ urlpatterns = [
 
     # Admin
     path('admin/students', AdminStudentsView.as_view(), name='admin-students'),
+    path('admin/students/<int:pk>', AdminStudentDetailView.as_view(), name='admin-student-detail'),
+    path('admin/students/<int:pk>/delete', AdminStudentDeleteView.as_view(), name='admin-student-delete'),
     path('admin/stats', AdminStatsView.as_view(), name='admin-stats'),
     path('admin/exams/<int:pk>', AdminToggleExamView.as_view(), name='admin-toggle-exam'),
     path('admin/exams/<int:pk>/toggle', AdminToggleExamView.as_view(), name='admin-toggle-exam-patch'),

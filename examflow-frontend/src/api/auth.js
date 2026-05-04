@@ -48,6 +48,8 @@ export const updateQuestion = (id, data) => api.put(`/questions/${id}`, data);
 export const deleteQuestion = (id) => api.delete(`/questions/${id}`);
 export const scheduleExam = (data) => api.post("/exams", data);
 export const getAllStudents = () => api.get("/admin/students");
+export const getStudentAnalytics = (id) => api.get(`/admin/students/${id}`);
+export const deleteStudent = (id) => api.delete(`/admin/students/${id}/delete`);
 export const getAdminStats = () => api.get("/admin/stats");
 export const deleteExam = (id) => api.delete(`/admin/exams/${id}`);
 export const toggleExam = (id) => api.patch(`/admin/exams/${id}/toggle`);

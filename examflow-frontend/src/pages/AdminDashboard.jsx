@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { getAdminStats, getAllStudents, getExams, deleteExam, toggleExam } from "../api/auth";
+import { getAdminStats, getAllStudents, getExams, deleteExam, toggleExam, deleteStudent } from "../api/auth";
 import Navbar from "../components/Navbar";
+import { useNavigate } from "react-router-dom";
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     total_students: 0,
     total_exams: 0,
@@ -51,6 +53,21 @@ export default function AdminDashboard() {
       fetchData(); // Refresh UI
     } catch {
       alert("Failed to toggle exam status.");
+    }
+  };
+
+  const handleDeleteStudent = async (id, name) => {
+    const confirmName = window.prompt(`To permanently delete this student, type their name: ${name}`);
+    if (confirmName !== name) {
+      if (confirmName !== null) alert("Name did not match. Deletion cancelled.");
+      return;
+    }
+    
+    try {
+      await deleteStudent(id);
+      fetchData(); // Refresh UI
+    } catch {
+      alert("Failed to delete student.");
     }
   };
 
@@ -164,6 +181,7 @@ export default function AdminDashboard() {
                   <th className="table-header">Email</th>
                   <th className="table-header">Joined Date</th>
                   <th className="table-header">Status</th>
+                  <th className="table-header text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -177,11 +195,19 @@ export default function AdminDashboard() {
                     <td className="table-cell">
                       <span className="badge-success">Active</span>
                     </td>
+                    <td className="table-cell text-right space-x-3">
+                      <button onClick={() => navigate(`/admin/student/${student.id}`)} className="text-xs font-semibold text-primary hover:underline">
+                        View Profile
+                      </button>
+                      <button onClick={() => handleDeleteStudent(student.id, student.name)} className="text-xs font-semibold text-danger hover:underline">
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 ))}
                 {students.length === 0 && (
                   <tr>
-                    <td colSpan="4" className="table-cell text-center py-8 text-slate-400">No students found.</td>
+                    <td colSpan="5" className="table-cell text-center py-8 text-slate-400">No students found.</td>
                   </tr>
                 )}
               </tbody>

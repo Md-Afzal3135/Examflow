@@ -271,7 +271,6 @@ class AdminToggleExamView(views.APIView):
             return Response({"message": "Exam status updated", "is_active": exam.is_active})
         except Exam.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-            
     def delete(self, request, pk):
         try:
             exam = Exam.objects.get(pk=pk)
@@ -280,6 +279,56 @@ class AdminToggleExamView(views.APIView):
             return Response({"message": f"Exam '{title}' deleted"})
         except Exam.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+class AdminStudentDetailView(views.APIView):
+    permission_classes = [IsAuthenticated, IsAdminUserOnly]
+    
+    def get(self, request, pk):
+        student = get_object_or_404(User, pk=pk, role='student')
+        
+        attempts = ExamAttempt.objects.filter(student=student, is_evaluated=True).order_by('submitted_at')
+        total_attempts = attempts.count()
+        
+        percentages = []
+        history = []
+        passed_count = 0
+        
+        for attempt in attempts:
+            if attempt.total_marks:
+                pct = round((attempt.score / attempt.total_marks) * 100, 2)
+                percentages.append(pct)
+                passed = pct >= 40
+                if passed:
+                    passed_count += 1
+                history.append({
+                    "id": attempt.id,
+                    "exam_title": attempt.exam.title,
+                    "score": pct,
+                    "passed": passed,
+                    "submitted_at": attempt.submitted_at
+                })
+                
+        avg_score = round(sum(percentages) / len(percentages), 2) if percentages else 0
+        pass_rate = round((passed_count / total_attempts) * 100, 2) if total_attempts else 0
+        
+        return Response({
+            "student": UserSerializer(student).data,
+            "analytics": {
+                "total_exams_taken": total_attempts,
+                "average_score": avg_score,
+                "pass_rate": pass_rate
+            },
+            "history": history
+        })
+
+class AdminStudentDeleteView(views.APIView):
+    permission_classes = [IsAuthenticated, IsAdminUserOnly]
+    
+    def delete(self, request, pk):
+        student = get_object_or_404(User, pk=pk, role='student')
+        name = student.name
+        student.delete() # Automatically cascades and deletes ExamAttempts
+        return Response({"message": f"Student '{name}' permanently deleted"})
 
 
 # ── Password Reset ─────────────────────────────────────────────────────────

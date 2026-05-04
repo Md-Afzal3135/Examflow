@@ -10,6 +10,7 @@ import StudentDashboard from "./pages/StudentDashboard";
 import ExamAttemptPage from "./pages/ExamAttemptPage";
 import ResultPage from "./pages/ResultPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminStudentProfile from "./pages/AdminStudentProfile";
 import ManageQuestions from "./pages/ManageQuestions";
 import ScheduleExam from "./pages/ScheduleExam";
 import ProfilePage from "./pages/ProfilePage";
@@ -37,6 +38,7 @@ export default function App() {
           {/* Admin Routes */}
           <Route element={<ProtectedRoute role="admin" />}>
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/student/:id" element={<AdminStudentProfile />} />
             <Route path="/admin/questions" element={<ManageQuestions />} />
             <Route path="/admin/schedule" element={<ScheduleExam />} />
           </Route>
