@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { getExams, getStudentResults } from "../api/auth";
 import ExamCard from "../components/ExamCard";
 import Navbar from "../components/Navbar";
 
 export default function StudentDashboard() {
+  const navigate = useNavigate();
   const [exams, setExams] = useState([]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +60,7 @@ export default function StudentDashboard() {
                     duration={exam.duration_minutes}
                     totalQuestions={exam.total_questions}
                     scheduledDate={exam.scheduled_at}
-                    onStart={() => { window.location.href = `/exam/${exam.id}`; }}
+                    onStart={() => navigate(`/exam/${exam.id}`)}
                   />
                 ))}
               </div>
