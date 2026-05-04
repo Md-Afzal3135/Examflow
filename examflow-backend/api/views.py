@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
+from django.core.signing import dumps, loads, BadSignature, SignatureExpired
 
 from .models import User, Exam, Question, ExamAttempt
 from .serializers import (
@@ -279,3 +280,116 @@ class AdminToggleExamView(views.APIView):
             return Response({"message": f"Exam '{title}' deleted"})
         except Exam.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+# ── Password Reset ─────────────────────────────────────────────────────────
+
+class RequestPasswordResetView(views.APIView):
+    """
+    POST /api/auth/request-password-reset
+    Body: { email }
+    Returns a signed token that the frontend embeds in the reset link and
+    sends via EmailJS. Token expires in 1 hour.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email', '').strip().lower()
+        # Always return 200 to prevent email enumeration
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response({"message": "If that email is registered, a reset link has been sent."})
+
+        token = dumps(email, salt='examflow-password-reset')
+        return Response({
+            "message": "Reset token generated.",
+            "token": token,
+            "name": user.name,
+        })
+
+
+class ResetPasswordConfirmView(views.APIView):
+    """
+    POST /api/auth/reset-password
+    Body: { token, password }
+    Validates the signed token (max 1 hour old) and updates the password.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        token    = request.data.get('token', '')
+        password = request.data.get('password', '')
+
+        if not token or not password:
+            return Response({"error": "Token and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if len(password) < 6:
+            return Response({"error": "Password must be at least 6 characters."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            email = loads(token, salt='examflow-password-reset', max_age=3600)
+        except SignatureExpired:
+            return Response({"error": "Reset link has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
+        except BadSignature:
+            return Response({"error": "Invalid or tampered reset link."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        user.set_password(password)
+        user.save()
+        return Response({"message": "Password reset successfully. You can now log in."})
+
+
+# ── Email Verification ─────────────────────────────────────────────────────
+
+class SendVerificationView(views.APIView):
+    """
+    POST /api/auth/send-verification
+    Authenticated — generates and returns a signed verification token (24h).
+    The frontend embeds the token in a link and sends the email via EmailJS.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if request.user.email_verified:
+            return Response({"message": "Email is already verified."})
+
+        token = dumps(request.user.email, salt='examflow-email-verify')
+        return Response({
+            "message": "Verification token generated.",
+            "token": token,
+            "name": request.user.name,
+            "email": request.user.email,
+        })
+
+
+class VerifyEmailView(views.APIView):
+    """
+    POST /api/auth/verify-email
+    Body: { token }
+    Validates the signed token (max 24 hours) and marks email_verified=True.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        token = request.data.get('token', '')
+
+        if not token:
+            return Response({"error": "Verification token is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            email = loads(token, salt='examflow-email-verify', max_age=86400)  # 24 hours
+        except SignatureExpired:
+            return Response({"error": "Verification link has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
+        except BadSignature:
+            return Response({"error": "Invalid verification link."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        user.email_verified = True
+        user.save()
+        return Response({"message": "Email verified successfully! You can now log in.", "email": email})

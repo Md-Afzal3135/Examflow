@@ -22,6 +22,14 @@ export const loginUser = (data) => api.post("/auth/login", data);
 export const getProfile = () => api.get("/auth/profile");
 export const updateProfile = (data) => api.put("/auth/profile", data);
 
+// Password Reset
+export const requestPasswordReset = (email) => api.post("/auth/request-password-reset", { email });
+export const confirmPasswordReset = (token, password) => api.post("/auth/reset-password", { token, password });
+
+// Email Verification
+export const sendVerification = () => api.post("/auth/send-verification");
+export const verifyEmail = (token) => api.post("/auth/verify-email", { token });
+
 // Exams
 export const getExams = () => api.get("/exams");
 export const getExamById = (id) => api.get(`/exams/${id}`);

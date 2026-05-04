@@ -4,6 +4,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import VerifyEmailPage from "./pages/VerifyEmailPage";
 import StudentDashboard from "./pages/StudentDashboard";
 import ExamAttemptPage from "./pages/ExamAttemptPage";
 import ResultPage from "./pages/ResultPage";
@@ -21,6 +23,8 @@ export default function App() {
           <Route path="/" element={<Navigate to="/login" />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
 
           {/* Student Routes */}
           <Route element={<ProtectedRoute role="student" />}>

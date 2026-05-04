@@ -79,3 +79,23 @@ export async function sendPasswordResetEmail({ name, email, resetLink }) {
     sign_off: "Best regards,",
   });
 }
+
+// ── Email verification email ──────────────────────────────────
+export async function sendVerificationEmail({ name, email, verifyLink }) {
+  return emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+    to_name:        name,
+    to_email:       email,
+    email,
+    link:           verifyLink,
+    email_title:    "Verify Your Email Address ✉️",
+    email_subtitle: "One quick step to activate your account",
+    icon:           "✅",
+    body_text:
+      "Thanks for signing up for ExamFlow! Please verify your email address " +
+      "by clicking the button below. This link is valid for 24 hours.",
+    cta_label:  "Verify My Email",
+    extra_info:
+      "💡 If you didn't create an ExamFlow account, you can safely ignore this email.",
+    sign_off: "Welcome aboard,",
+  });
+}

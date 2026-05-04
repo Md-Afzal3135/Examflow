@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { registerUser } from "../api/auth";
-import { sendWelcomeEmail } from "../api/emailService";
+import { registerUser, sendVerification } from "../api/auth";
+import { sendWelcomeEmail, sendVerificationEmail } from "../api/emailService";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -22,9 +22,31 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
-      await registerUser({ name: form.name, email: form.email, password: form.password, role: "student" });
-      // Send welcome email — fire-and-forget (don't block navigation on email failure)
+      const regRes = await registerUser({ name: form.name, email: form.email, password: form.password, role: "student" });
+      const token = localStorage.getItem("token") || regRes?.data?.token;
+
+      // Send welcome + verification emails (fire-and-forget)
       sendWelcomeEmail({ name: form.name, email: form.email }).catch(() => {});
+
+      // Get a signed verification token from backend and send verification email
+      if (token) {
+        // Temporarily store token to authenticate the send-verification call
+        const origToken = localStorage.getItem("token");
+        localStorage.setItem("token", token);
+        sendVerification()
+          .then((vRes) => {
+            const { token: vToken, name, email } = vRes.data;
+            const verifyLink = `${window.location.origin}/verify-email?token=${encodeURIComponent(vToken)}`;
+            sendVerificationEmail({ name, email, verifyLink }).catch(() => {});
+          })
+          .catch(() => {})
+          .finally(() => {
+            // Restore original token (user not logged in yet)
+            if (origToken) localStorage.setItem("token", origToken);
+            else localStorage.removeItem("token");
+          });
+      }
+
       navigate("/login");
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed. Please try again.");

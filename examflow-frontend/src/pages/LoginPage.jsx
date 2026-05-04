@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { loginUser } from "../api/auth";
+import { loginUser, requestPasswordReset } from "../api/auth";
 import { sendPasswordResetEmail } from "../api/emailService";
 
 export default function LoginPage() {
@@ -51,20 +51,29 @@ export default function LoginPage() {
     setResetError("");
 
     try {
-      // Build a token-style reset link; real token verification happens on your backend
-      const token = btoa(`${resetEmail}:${Date.now()}`);
-      const resetLink = `${window.location.origin}/reset-password?token=${token}&email=${encodeURIComponent(resetEmail)}`;
+      // Ask backend to generate a signed token for this email
+      const res = await requestPasswordReset(resetEmail.trim());
+      const { token, name } = res.data;
+
+      if (!token) {
+        // Email not found — backend still returns 200, show generic message
+        setResetStatus("sent");
+        return;
+      }
+
+      // Build the reset link — opens in a new tab from the email
+      const resetLink = `${window.location.origin}/reset-password?token=${encodeURIComponent(token)}&email=${encodeURIComponent(resetEmail.trim())}`;
 
       await sendPasswordResetEmail({
-        name:      resetEmail.split("@")[0],  // best-effort name from email prefix
-        email:     resetEmail,
+        name: name || resetEmail.split("@")[0],
+        email: resetEmail.trim(),
         resetLink,
       });
 
       setResetStatus("sent");
     } catch (err) {
-      console.error("[EmailJS] sendPasswordResetEmail error:", err);
-      const detail = err?.text || err?.message || JSON.stringify(err);
+      console.error("[PasswordReset] error:", err);
+      const detail = err?.response?.data?.error || err?.text || err?.message || "Unknown error";
       setResetStatus("error");
       setResetError(`Failed to send reset email: ${detail}`);
     }
