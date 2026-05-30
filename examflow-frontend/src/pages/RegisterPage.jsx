@@ -27,13 +27,13 @@ export default function RegisterPage() {
 
       // 2. Get a backend-signed verification token (no JWT required — email passed in body)
       const vRes = await sendVerification(form.email);
-      const { token: vToken, name: vName, email: vEmail } = vRes.data;
+      const { token: vToken, name: vName, email: vEmail, otp } = vRes.data;
       const verifyLink = `${window.location.origin}/verify-email?token=${encodeURIComponent(vToken)}`;
 
       // 3. Send welcome + verification emails IN PARALLEL — fire-and-forget
       Promise.all([
         sendWelcomeEmail({ name: form.name, email: form.email }),
-        sendVerificationEmail({ name: vName || form.name, email: vEmail || form.email, verifyLink }),
+        sendVerificationEmail({ name: vName || form.name, email: vEmail || form.email, verifyLink, otp }),
       ]).catch(() => {});
 
       navigate("/login");

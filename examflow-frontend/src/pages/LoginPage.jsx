@@ -53,7 +53,7 @@ export default function LoginPage() {
     try {
       // Ask backend to generate a signed token for this email
       const res = await requestPasswordReset(resetEmail.trim());
-      const { token, name } = res.data;
+      const { token, name, otp } = res.data;
 
       if (!token) {
         // Email not found — backend still returns 200, show generic message
@@ -68,6 +68,7 @@ export default function LoginPage() {
         name: name || resetEmail.split("@")[0],
         email: resetEmail.trim(),
         resetLink,
+        otp,
       });
 
       setResetStatus("sent");

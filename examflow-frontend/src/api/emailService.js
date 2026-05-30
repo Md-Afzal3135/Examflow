@@ -59,7 +59,7 @@ export async function sendWelcomeEmail({ name, email }) {
 }
 
 // ── Password-reset email ──────────────────────────────────────
-export async function sendPasswordResetEmail({ name, email, resetLink }) {
+export async function sendPasswordResetEmail({ name, email, resetLink, otp }) {
   return emailjs.send(SERVICE_ID, TEMPLATE_ID, {
     to_name:        name,
     to_email:       email,
@@ -70,8 +70,9 @@ export async function sendPasswordResetEmail({ name, email, resetLink }) {
     icon:           "🔐",
     body_text:
       "Someone requested a password reset for your ExamFlow account. " +
-      "Click the button below to choose a new password. " +
-      "This link is valid for 1 hour.",
+      "Your OTP is: " + otp + ". " +
+      "Click the button below to enter this OTP and choose a new password. " +
+      "This link and OTP are valid for 1 hour.",
     cta_label:  "Reset My Password",
     extra_info:
       "⚠️ Didn't request this? If you didn't ask for a password reset, you can " +
@@ -81,7 +82,7 @@ export async function sendPasswordResetEmail({ name, email, resetLink }) {
 }
 
 // ── Email verification email ──────────────────────────────────
-export async function sendVerificationEmail({ name, email, verifyLink }) {
+export async function sendVerificationEmail({ name, email, verifyLink, otp }) {
   return emailjs.send(SERVICE_ID, TEMPLATE_ID, {
     to_name:        name,
     to_email:       email,
@@ -92,7 +93,8 @@ export async function sendVerificationEmail({ name, email, verifyLink }) {
     icon:           "✅",
     body_text:
       "Thanks for signing up for ExamFlow! Please verify your email address " +
-      "by clicking the button below. This link is valid for 24 hours.",
+      "by clicking the button below and entering the following OTP: " + otp + ". " +
+      "This link and OTP are valid for 24 hours.",
     cta_label:  "Verify My Email",
     extra_info:
       "💡 If you didn't create an ExamFlow account, you can safely ignore this email.",

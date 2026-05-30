@@ -78,15 +78,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'examflow_backend.wsgi.application'
 
-# Database — Railway PostgreSQL
-# Reads DATABASE_URL from .env locally or from Render environment variables in production
-RAILWAY_DB_URL = 'postgresql://postgres:EEmSUabQjsQKHiFKPiDSLZeQYdVADoSf@switchyard.proxy.rlwy.net:52124/railway'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL', RAILWAY_DB_URL),
+        default=os.getenv('DATABASE_URL'),
         conn_max_age=600,       # Keep DB connections alive for 10 min (performance)
-        ssl_require=True,       # Railway requires SSL
+        ssl_require=True,       # requires SSL
     )
 }
 

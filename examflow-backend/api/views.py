@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.core.signing import dumps, loads, BadSignature, SignatureExpired
+import random
 
 from .models import User, Exam, Question, ExamAttempt
 from .serializers import (
@@ -349,10 +350,12 @@ class RequestPasswordResetView(views.APIView):
         if not user:
             return Response({"message": "If that email is registered, a reset link has been sent."})
 
-        token = dumps(email, salt='examflow-password-reset')
+        otp = f"{random.randint(100000, 999999)}"
+        token = dumps({'email': email, 'otp': otp}, salt='examflow-password-reset')
         return Response({
             "message": "Reset token generated.",
             "token": token,
+            "otp": otp,
             "name": user.name,
         })
 
@@ -367,20 +370,24 @@ class ResetPasswordConfirmView(views.APIView):
 
     def post(self, request):
         token    = request.data.get('token', '')
+        otp      = request.data.get('otp', '')
         password = request.data.get('password', '')
 
-        if not token or not password:
-            return Response({"error": "Token and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not token or not password or not otp:
+            return Response({"error": "Token, OTP and password are required."}, status=status.HTTP_400_BAD_REQUEST)
 
         if len(password) < 6:
             return Response({"error": "Password must be at least 6 characters."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            email = loads(token, salt='examflow-password-reset', max_age=3600)
+            data = loads(token, salt='examflow-password-reset', max_age=3600)
+            email = data['email']
+            if data['otp'] != str(otp):
+                return Response({"error": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
         except SignatureExpired:
-            return Response({"error": "Reset link has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Reset OTP has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
         except BadSignature:
-            return Response({"error": "Invalid or tampered reset link."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid or tampered reset OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
         user = User.objects.filter(email=email).first()
         if not user:
@@ -419,12 +426,14 @@ class SendVerificationView(views.APIView):
         if user.email_verified:
             return Response({"message": "Email is already verified."})
 
-        token = dumps(email, salt='examflow-email-verify')
+        otp = f"{random.randint(100000, 999999)}"
+        token = dumps({'email': email, 'otp': otp}, salt='examflow-email-verify')
         return Response({
             "message": "Verification token generated.",
             "token": token,
-            "name": request.user.name,
-            "email": request.user.email,
+            "otp": otp,
+            "name": user.name,
+            "email": user.email,
         })
 
 
@@ -438,16 +447,20 @@ class VerifyEmailView(views.APIView):
 
     def post(self, request):
         token = request.data.get('token', '')
+        otp = request.data.get('otp', '')
 
-        if not token:
-            return Response({"error": "Verification token is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not token or not otp:
+            return Response({"error": "Verification token and OTP are required."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            email = loads(token, salt='examflow-email-verify', max_age=86400)  # 24 hours
+            data = loads(token, salt='examflow-email-verify', max_age=86400)  # 24 hours
+            email = data['email']
+            if data['otp'] != str(otp):
+                return Response({"error": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
         except SignatureExpired:
-            return Response({"error": "Verification link has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Verification OTP has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
         except BadSignature:
-            return Response({"error": "Invalid verification link."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid verification OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
         user = User.objects.filter(email=email).first()
         if not user:

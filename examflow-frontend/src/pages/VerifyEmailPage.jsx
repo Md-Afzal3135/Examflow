@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { verifyEmail } from "../api/auth";
 
@@ -6,27 +6,34 @@ export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") || "";
 
-  const [status, setStatus] = useState("verifying"); // verifying | success | error
+  const [otp, setOtp] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | verifying | success | error
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
+  const handleVerify = async (e) => {
+    e.preventDefault();
     if (!token) {
       setStatus("error");
       setMessage("Invalid verification link. Please request a new one.");
       return;
     }
+    if (!otp) {
+      setStatus("error");
+      setMessage("Please enter the 6-digit OTP.");
+      return;
+    }
 
-    verifyEmail(token)
-      .then((res) => {
-        setMessage(res.data.message || "Email verified successfully!");
-        setStatus("success");
-      })
-      .catch((err) => {
-        const msg = err?.response?.data?.error || "Verification failed. The link may have expired.";
-        setMessage(msg);
-        setStatus("error");
-      });
-  }, [token]);
+    setStatus("verifying");
+    try {
+      const res = await verifyEmail(token, otp);
+      setMessage(res.data.message || "Email verified successfully!");
+      setStatus("success");
+    } catch (err) {
+      const msg = err?.response?.data?.error || "Verification failed. The link or OTP may be invalid.";
+      setMessage(msg);
+      setStatus("error");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-sky-50 flex items-center justify-center p-4">
@@ -45,15 +52,49 @@ export default function VerifyEmailPage() {
 
         <div className="card shadow-xl border-0 text-center py-10">
 
-          {/* Verifying */}
-          {status === "verifying" && (
-            <>
-              <div className="flex justify-center mb-5">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
+          {/* Form */}
+          {status !== "success" && (
+            <form onSubmit={handleVerify} className="space-y-4 px-6 text-left">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="otp">
+                  Enter 6-Digit OTP
+                </label>
+                <input
+                  id="otp"
+                  type="text"
+                  required
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  className="input-field"
+                  placeholder="Enter OTP sent to your email"
+                  autoFocus
+                />
               </div>
-              <h2 className="text-xl font-bold text-slate-800 mb-2">Verifying your email…</h2>
-              <p className="text-slate-500 text-sm">Please wait a moment.</p>
-            </>
+
+              {/* Error */}
+              {status === "error" && (
+                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-danger animate-fade-in">
+                  <span>⚠️</span> {message || "Something went wrong. Please try again."}
+                </div>
+              )}
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={status === "verifying"}
+                className="btn-primary w-full"
+              >
+                {status === "verifying" ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                    Verifying…
+                  </span>
+                ) : (
+                  "Verify Email"
+                )}
+              </button>
+            </form>
           )}
 
           {/* Success */}
@@ -72,24 +113,6 @@ export default function VerifyEmailPage() {
             </>
           )}
 
-          {/* Error */}
-          {status === "error" && (
-            <>
-              <div className="text-6xl mb-4">❌</div>
-              <h2 className="text-2xl font-bold text-slate-800 mb-2">Verification Failed</h2>
-              <p className="text-slate-500 mb-2">{message}</p>
-              <p className="text-xs text-slate-400 mb-6">
-                Verification links expire after 24 hours.
-              </p>
-              <Link
-                id="verify-error-login-btn"
-                to="/login"
-                className="btn-primary inline-block"
-              >
-                Back to Login
-              </Link>
-            </>
-          )}
         </div>
 
         <p className="text-center text-xs text-slate-400 mt-6">

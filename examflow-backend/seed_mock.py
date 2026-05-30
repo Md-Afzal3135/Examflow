@@ -206,7 +206,7 @@ def seed_mock():
     students = []
     used_combos = set()
     i = 1
-    while len(students) < 30:
+    while len(students) < 10:
         fn = random.choice(FIRST_NAMES)
         ln = random.choice(LAST_NAMES)
         combo = (fn, ln)
@@ -228,9 +228,9 @@ def seed_mock():
         i += 1
 
     # ── 8 Exams with 10 questions each ────────────────────────
-    print("\n[3/4] Seeding 8 exams with 10 questions each...")
+    print("\n[3/4] Seeding 3 exams with 10 questions each...")
     exams = []
-    for idx, cat in enumerate(EXAM_CATALOG, start=1):
+    for idx, cat in enumerate(EXAM_CATALOG[:3], start=1):
         exam, created = Exam.objects.get_or_create(
             title=cat["title"],
             defaults={

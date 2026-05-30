@@ -24,11 +24,11 @@ export const updateProfile = (data) => api.put("/auth/profile", data);
 
 // Password Reset
 export const requestPasswordReset = (email) => api.post("/auth/request-password-reset", { email });
-export const confirmPasswordReset = (token, password) => api.post("/auth/reset-password", { token, password });
+export const confirmPasswordReset = (token, password, otp) => api.post("/auth/reset-password", { token, password, otp });
 
 // Email Verification
 export const sendVerification = (email) => api.post("/auth/send-verification", { email });
-export const verifyEmail = (token) => api.post("/auth/verify-email", { token });
+export const verifyEmail = (token, otp) => api.post("/auth/verify-email", { token, otp });
 
 // Exams
 export const getExams = () => api.get("/exams");

@@ -7,7 +7,7 @@ export default function ResetPasswordPage() {
   const token = searchParams.get("token") || "";
   const email = searchParams.get("email") || "";
 
-  const [form, setForm]     = useState({ password: "", confirm: "" });
+  const [form, setForm]     = useState({ password: "", confirm: "", otp: "" });
   const [status, setStatus] = useState("idle");   // idle | submitting | success | error
   const [error, setError]   = useState("");
 
@@ -27,10 +27,14 @@ export default function ResetPasswordPage() {
       setError("Invalid or missing reset token. Please request a new link.");
       return;
     }
+    if (!form.otp) {
+      setError("OTP is required.");
+      return;
+    }
 
     setStatus("submitting");
     try {
-      await confirmPasswordReset(token, form.password);
+      await confirmPasswordReset(token, form.password, form.otp);
       setStatus("success");
     } catch (err) {
       const msg = err?.response?.data?.error || "Failed to reset password. The link may have expired.";
@@ -102,6 +106,24 @@ export default function ResetPasswordPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* OTP */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="otp">
+                6-Digit OTP
+              </label>
+              <input
+                id="otp"
+                type="text"
+                required
+                maxLength={6}
+                value={form.otp}
+                onChange={(e) => setForm({ ...form, otp: e.target.value })}
+                className="input-field"
+                placeholder="Enter 6-digit OTP from email"
+                autoFocus
+              />
+            </div>
+
             {/* New Password */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5" htmlFor="new-password">
@@ -116,7 +138,6 @@ export default function ResetPasswordPage() {
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 className="input-field"
                 placeholder="Minimum 6 characters"
-                autoFocus
               />
             </div>
 
