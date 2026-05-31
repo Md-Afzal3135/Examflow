@@ -81,7 +81,7 @@ WSGI_APPLICATION = 'examflow_backend.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL'),
+        default=os.getenv('DATABASE_URL', 'postgresql://neondb_owner:npg_1Fvb6nuAckgm@ep-sweet-violet-ao40v9hb-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'),
         conn_max_age=600,       # Keep DB connections alive for 10 min (performance)
         ssl_require=True,       # requires SSL
     )
