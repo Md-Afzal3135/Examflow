@@ -1,4 +1,4 @@
-from rest_framework import status, views
+from rest_framework import status, views, serializers
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -33,6 +33,14 @@ class RegisterView(views.APIView):
 
 class LoginView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
+
+    def post(self, request, *args, **kwargs):
+        try:
+            return super().post(request, *args, **kwargs)
+        except serializers.ValidationError as e:
+            if 'error' in e.detail and isinstance(e.detail['error'], list):
+                return Response({'error': e.detail['error'][0]}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
 
 class ProfileView(views.APIView):
     permission_classes = [IsAuthenticated]

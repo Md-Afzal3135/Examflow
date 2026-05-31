@@ -17,9 +17,19 @@ class UserSerializer(serializers.ModelSerializer):
         )
         return user
 
+from rest_framework.exceptions import AuthenticationFailed
+
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
-        data = super().validate(attrs)
+        try:
+            data = super().validate(attrs)
+        except AuthenticationFailed:
+            raise serializers.ValidationError({"error": "Invalid email or password."})
+            
+        request_role = self.initial_data.get('role')
+        if request_role and self.user.role != request_role:
+            raise serializers.ValidationError({"error": f"Invalid credentials. Please ensure you are logging in as a {request_role}."})
+
         # Add user data to response to match the Guide's return format
         data['user'] = {
             'id': self.user.id,
