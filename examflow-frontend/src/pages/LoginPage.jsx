@@ -92,8 +92,8 @@ export default function LoginPage() {
       <div className="w-full max-w-md animate-slide-up">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary shadow-lg mb-4">
-            <span className="text-white text-2xl font-bold">EF</span>
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl shadow-lg mb-4 overflow-hidden ring-4 ring-white bg-white">
+            <img src="/logo.png" alt="ExamFlow Logo" className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300" />
           </div>
           <h1 className="text-3xl font-bold text-slate-800">
             Exam<span className="text-primary">Flow</span>
